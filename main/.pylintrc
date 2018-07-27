@@ -1,0 +1,4 @@
+[BASIC]
+good-names=state,app,r,e,x,i
+[MESSAGES CONTROL]
+disable=W0105
