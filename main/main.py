@@ -1,6 +1,6 @@
 #!/user/bin/env python3
 # -*- coding: utf-8 -*-
-"""Example Google style docstrings.
+"""wallaced-core
 description:
     This module is the main coordinator between all the modules
     and plugs that make up Wallace. This module's Docker container
@@ -10,6 +10,7 @@ import signal
 import sys
 import json
 import time
+import threading
 import requests
 from flask import Flask
 from flask import jsonify
@@ -100,6 +101,18 @@ class State():
                 new_phrase_list.append(phrase)
         self.keywords = new_phrase_list
         return removed_phrases
+
+
+def _process_message(message):
+    """
+    Parses through the message to send it to the correct submodule.
+
+    Args:
+        message
+    """
+
+    if state.interactive_lock:
+        send_message(message)
 
 
 def signal_handler(sig, frame):
@@ -226,6 +239,16 @@ def register_keyword():
 
 @app.route("/request_from", methods=['POST'])
 def request_from():
+    """
+    This function allows modules to request data from other modules
+    without being networked to them in the docker-compose configuration.
+
+    Args:
+        sender
+        module
+        func_name
+        payload
+    """
     if not request.json:
         abort(400)
     body = json.loads(request.json)
@@ -240,10 +263,52 @@ def request_from():
                         'error': True})
 
 
-@app.route("/post_message", methods=['POST'])
-def send_message():
+@app.route("/get_message", methods=['POST'])
+def accept_message():
+    """
+    This is the function that accepts messages from Plugs and filters them
+    down to the correct modules.
 
+    Args:
+        sender
+        people
+        message
+        timestamp
+    """
+    if not request.json:
+        abort(400)
+    body = json.loads(request.json)
+    thread = threading.Thread(target=_process_message(body), args=())
+    thread.daemon = True
+    thread.start()
     return jsonify({'result': True})
+
+
+@app.route("/post_message", methods=['POST'])
+def send_message(message=None):
+    """
+    Standardized function is used both for sending
+    chat messages between modules
+
+    Args:
+        message
+    """
+    if message is None:
+        if not request.json:
+            abort(400)
+        message = json.loads(request.json)
+
+    data = {'text': message.text,
+            'sender': message.sender}
+    url = "{}/get_message".format(message.dest)
+    try:
+        r = requests.post(url=url, data=data)
+        return r.json()
+    except requests.exceptions.RequestException as e:
+        error("Something happened sending a message to " +
+              message.dest +
+              ", see error: " +
+              str(e))
 
 
 if __name__ == "__main__":
