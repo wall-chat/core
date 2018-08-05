@@ -117,31 +117,31 @@ def _process_message(message):
 
 def signal_handler(sig, frame):
     """
-    Enables a clean shutdown for all registered modules
+    enables a clean shutdown for all registered modules
     """
-    debug("Received " + sig + frame + ", shutting down.")
-    print('\nShutting down...')
+    debug("received " + sig + frame + ", shutting down.")
+    print('\nshutting down...')
     sys.exit(0)
 
 
 def error(output):
     """
-    See warn()!
+    see warn()!
     """
-    debug("Error! " + output)
+    debug("error! " + output)
 
 
 def warn(output):
     """
-    There should be a full-featured debugging module in the future.
-    This is merely a placeholder for that later.
+    there should be a full-featured debugging module in the future.
+    this is merely a placeholder for that later.
     """
-    debug("Warning! " + output)
+    debug("warning! " + output)
 
 
 def debug(output):
     """
-    Prints debug to STDOUT for now. This will likely integrate with the
+    prints debug to stdout for now. this will likely integrate with the
     beetlejuice module in the future.
     """
     if state.debug:
@@ -157,6 +157,7 @@ def is_up():
     Returns a JSON paylod containing '{'result': True}'
     """
     if not request.json:
+        """Something should be posted, though it doesn't matter what"""
         abort(400)
     return jsonify({'result': True})
 
